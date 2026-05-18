@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Proctoring System</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+
+    <!-- ── HEADER ── -->
+    <header class="header">
+      <div class="header-left">
+        <div class="logo">🎓 ProctorAI</div>
+        <div class="session-info">
+          <span class="label">Session:</span>
+          <span id="session-id-display">—</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="ws-status" id="ws-status">
+          <span class="dot dot-off"></span>
+          <span id="ws-status-text">Disconnected</span>
+        </div>
+        <div class="uptime-display">
+          <span class="label">Uptime:</span>
+          <span id="uptime">00:00:00</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- ── MAIN GRID ── -->
+    <main class="grid">
+
+      <!-- LEFT COLUMN -->
+      <div class="col-left">
+
+        <!-- Webcam Card -->
+        <div class="card webcam-card">
+          <div class="card-header">
+            <span>📷 Live Webcam</span>
+            <div class="cam-indicators">
+              <span class="badge" id="face-badge">No Face</span>
+              <span class="badge badge-green" id="cam-badge">OFF</span>
+            </div>
+          </div>
+          <div class="webcam-wrapper">
+            <video id="webcam" autoplay muted playsinline></video>
+            <canvas id="snapshot-canvas" style="display:none"></canvas>
+            <!-- Bounding box overlay canvas — sits on top of the video -->
+            <canvas id="bbox-canvas"></canvas>
+            <div class="cam-overlay" id="cam-overlay">
+              <span>Camera Off</span>
+            </div>
+          </div>
+          <div class="mic-bar">
+            <span>🎙 Mic Level</span>
+            <div class="mic-meter">
+              <div class="mic-fill" id="mic-fill"></div>
+            </div>
+            <span id="mic-status" class="mic-status">OFF</span>
+          </div>
+        </div>
+
+        <!-- Controls Card -->
+        <div class="card controls-card">
+          <div class="card-header"><span>⚙️ Controls</span></div>
+          <div class="controls-grid">
+            <div class="input-group">
+              <label>Session ID</label>
+              <input type="text" id="session-id-input" placeholder="exam-session-001" value="exam-session-001" />
+            </div>
+            <div class="input-group">
+              <label>Backend URL</label>
+              <input type="text" id="backend-url" value="http://localhost:8000" />
+            </div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" id="btn-connect">Connect</button>
+            <button class="btn btn-danger" id="btn-disconnect" disabled>Disconnect</button>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-success" id="btn-start" disabled>▶ Start Exam</button>
+            <button class="btn btn-warning" id="btn-stop" disabled>⏹ Stop Exam</button>
+          </div>
+          <div class="stats-row">
+            <div class="stat-box">
+              <div class="stat-val" id="frames-sent">0</div>
+              <div class="stat-lbl">Frames Sent</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-val" id="audio-chunks">0</div>
+              <div class="stat-lbl">Audio Chunks</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-val" id="events-count">0</div>
+              <div class="stat-lbl">Events</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-val" id="warnings-count">0</div>
+              <div class="stat-lbl">Warnings</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- CENTER COLUMN -->
+      <div class="col-center">
+
+        <!-- Risk Score Card -->
+        <div class="card risk-card">
+          <div class="card-header"><span>⚠️ Risk Assessment</span></div>
+          <div class="risk-display">
+            <div class="risk-gauge" id="risk-gauge">
+              <div class="risk-score" id="risk-score">0</div>
+              <div class="risk-label" id="risk-label">LOW</div>
+            </div>
+            <div class="risk-bars">
+              <div class="risk-bar-item">
+                <span>Session Risk</span>
+                <div class="progress-bar">
+                  <div class="progress-fill" id="session-risk-bar" style="width:0%"></div>
+                </div>
+                <span id="session-risk-val">0</span>
+              </div>
+              <div class="risk-bar-item">
+                <span>Frame Risk</span>
+                <div class="progress-bar">
+                  <div class="progress-fill" id="frame-risk-bar" style="width:0%"></div>
+                </div>
+                <span id="frame-risk-val">0</span>
+              </div>
+              <div class="risk-bar-item">
+                <span>Audio Risk</span>
+                <div class="progress-bar">
+                  <div class="progress-fill" id="audio-risk-bar" style="width:0%"></div>
+                </div>
+                <span id="audio-risk-val">0</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cheating Alerts -->
+        <div class="card alerts-card">
+          <div class="card-header">
+            <span>🚨 Cheating Alerts</span>
+            <button class="btn-clear" id="btn-clear-alerts">Clear</button>
+          </div>
+          <div class="alerts-list" id="alerts-list">
+            <div class="empty-state">No alerts yet</div>
+          </div>
+        </div>
+
+        <!-- Transcript Panel -->
+        <div class="card transcript-card">
+          <div class="card-header"><span>📝 Live Transcript</span></div>
+          <div class="transcript-body" id="transcript-body">
+            <div class="empty-state">Waiting for speech...</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT COLUMN -->
+      <div class="col-right">
+
+        <!-- Detected Events -->
+        <div class="card events-card">
+          <div class="card-header">
+            <span>📋 Event Timeline</span>
+            <button class="btn-clear" id="btn-clear-events">Clear</button>
+          </div>
+          <div class="events-list" id="events-list">
+            <div class="empty-state">No events yet</div>
+          </div>
+        </div>
+
+        <!-- Active Detections -->
+        <div class="card detections-card">
+          <div class="card-header"><span>🔍 Active Detections</span></div>
+          <div class="detection-chips" id="detection-chips">
+            <div class="chip chip-off" id="chip-mobile">📱 Mobile</div>
+            <div class="chip chip-off" id="chip-headset">🎧 Headset</div>
+            <div class="chip chip-off" id="chip-multiple">👥 Multiple Persons</div>
+            <div class="chip chip-off" id="chip-noface">👤 No Face</div>
+            <div class="chip chip-off" id="chip-looking">👀 Looking Away</div>
+            <div class="chip chip-off" id="chip-posture">🪑 Bad Posture</div>
+            <div class="chip chip-off" id="chip-movement">🏃 Suspicious Movement</div>
+            <div class="chip chip-off" id="chip-transcript">💬 Suspicious Speech</div>
+          </div>
+        </div>
+
+        <!-- Debug Log -->
+        <div class="card debug-card">
+          <div class="card-header">
+            <span>🔧 Debug Log</span>
+            <button class="btn-clear" id="btn-clear-debug">Clear</button>
+          </div>
+          <div class="debug-log" id="debug-log"></div>
+        </div>
+
+      </div>
+    </main>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

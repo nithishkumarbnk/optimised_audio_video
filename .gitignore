@@ -1,0 +1,102 @@
+# ============================================================
+# AI Proctoring Backend — .gitignore
+# ============================================================
+
+# ── Python bytecode ───────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+.Python
+pip-wheel-metadata/
+
+# ── Virtual environments ──────────────────────────────────
+venv/
+.venv/
+env/
+ENV/
+
+# ── Environment variables (NEVER commit secrets) ─────────
+.env
+# Keep the example file
+!.env.example
+
+# ── Logs ─────────────────────────────────────────────────
+logs/*.log
+logs/*.log.*
+# Keep the placeholder so the directory exists in git
+!logs/.gitkeep
+
+# ── Uploads (runtime audio/video files) ──────────────────
+uploads/*.wav
+uploads/*.mp3
+uploads/*.mp4
+uploads/*.webm
+uploads/*.m4a
+uploads/*.ogg
+uploads/*.flac
+# Keep the placeholder
+!uploads/.gitkeep
+
+# ── Test output artifacts ─────────────────────────────────
+test_output.txt
+test_results.txt
+.pytest_cache/
+.hypothesis/
+htmlcov/
+.coverage
+coverage.xml
+*.cover
+
+# ── Model files — large binaries ─────────────────────────
+# PT models: tracked via Git LFS (add: git lfs track "*.pt")
+# *.pt
+
+# ONNX models in assets: tracked via Git LFS (add: git lfs track "*.onnx")
+# app/models/indic-conformer-600m/assets/*.onnx
+
+# Optimized/generated models — NOT committed (regenerate with pipeline)
+app/models/optimized/
+# ONNX exports generated from PT (regenerate with export_pt_to_onnx.py)
+app/models/*.onnx
+
+# HuggingFace local cache inside model directory
+app/models/indic-conformer-600m/.cache/
+
+# ── Benchmark outputs (generated data, not source) ───────
+benchmark/outputs/
+# Keep the directory structure
+!benchmark/outputs/.gitkeep
+
+# ── HuggingFace module cache ──────────────────────────────
+.hf_modules_cache/
+.cache/
+
+# ── IDE / editor ─────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# ── Docker overrides ─────────────────────────────────────
+docker-compose.override.yml
+
+# ── Kiro spec files ───────────────────────────────────────
+.kiro/
+
+# ── Misc test/debug artifacts ────────────────────────────
+tools/test_frame.jpg
+tools/check_stt_path.py
+*.tmp
+*.bak
+*.orig
+
+# ── Audit report (generated, not source) ─────────────────
+AUDIT_REPORT.md

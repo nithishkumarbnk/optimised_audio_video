@@ -1,0 +1,40 @@
+# ============================================================
+# AI Proctoring Backend — Development & Test Dependencies
+# ============================================================
+# Install: venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+# (Requires requirements.txt to be installed first)
+# ============================================================
+
+-r requirements.txt
+
+# ── Testing ───────────────────────────────────────────────
+pytest==8.2.0
+pytest-asyncio==0.23.6
+hypothesis==6.100.0
+
+# ── Benchmarking / profiling ──────────────────────────────
+py-cpuinfo==9.0.0
+py3nvml==0.2.7
+xmltodict==1.0.4
+matplotlib==3.10.9
+pillow==12.2.0
+contourpy==1.3.3
+cycler==0.12.1
+fonttools==4.63.0
+kiwisolver==1.5.0
+pyparsing==3.3.2
+polars==1.40.1
+polars-runtime-32==1.40.1
+
+# ── ONNX optimization tools ───────────────────────────────
+# (already in requirements.txt — listed here for clarity)
+# onnx, onnxruntime-tools, onnxslim
+
+# ── Misc dev utilities ────────────────────────────────────
+rich-toolkit==0.19.9
+shellingham==1.5.4
+typer==0.25.1
+fastapi-cli==0.0.24
+iniconfig==2.3.0
+pluggy==1.6.0
+attrs==26.1.0
