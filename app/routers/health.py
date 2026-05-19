@@ -61,12 +61,12 @@ async def health_check() -> JSONResponse:
     Computes the uptime by subtracting the module-level ``_start_time``
     (set at import) from the current :func:`time.monotonic` value.
 
-    Inspects each service's class-level session/model attribute to
+    Inspects each service's class-level model attribute to
     determine whether the corresponding ML model has been loaded:
 
-    * ``YOLOService._session is not None``
-    * ``HeadsetService._session is not None``
-    * ``ProctorService._session is not None``
+    * ``YOLOService._model is not None``
+    * ``HeadsetService._model is not None``
+    * ``ProctorService._model is not None``
     * ``STTService._model is not None``
 
     Returns
@@ -88,9 +88,9 @@ async def health_check() -> JSONResponse:
     uptime_seconds: float = round(time.monotonic() - _start_time, 3)
 
     models: Dict[str, bool] = {
-        "yolo": YOLOService._session is not None,
-        "headset": HeadsetService._session is not None,
-        "proctor": ProctorService._session is not None,
+        "yolo": YOLOService._model is not None,
+        "headset": HeadsetService._model is not None,
+        "proctor": ProctorService._model is not None,
         "stt": STTService._model is not None,
     }
 

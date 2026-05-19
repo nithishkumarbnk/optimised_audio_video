@@ -1,22 +1,69 @@
-version: "3.9"
+# ============================================================
+# AI Proctoring Backend — Docker Compose
+# ============================================================
+# Usage:
+#   docker compose up --build          # build and start
+#   docker compose up -d               # start in background
+#   docker compose logs -f             # follow logs
+#   docker compose down                # stop and remove containers
+# ============================================================
 
 services:
   proctoring-api:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: proctoring-api:latest
+    container_name: proctoring-api
     ports:
       - "8000:8000"
+
+    # Load environment variables from .env file
+    # Copy .env.example → .env and fill in OPENROUTER_API_KEY before running
     env_file: .env
+
+    environment:
+      # Override HF_MODULES_CACHE to use a named volume (writable, persistent)
+      # so transformers can cache model_onnx.py between container restarts.
+      HF_MODULES_CACHE: /app/.hf_modules_cache
+
     volumes:
-      # model files — read-only mount so the container cannot modify them
+      # ── Model files (read-only) ───────────────────────────
+      # Mount the local models directory into the container.
+      # :ro prevents the container from modifying model files.
       - ./app/models:/app/app/models:ro
-      # Persistent log storage
+
+      # ── HuggingFace module cache (writable, persistent) ───
+      # Persists the transformers module cache across container restarts.
+      # Without this, transformers re-copies model_onnx.py on every startup.
+      - hf_modules_cache:/app/.hf_modules_cache
+
+      # ── Runtime data (writable, persistent) ───────────────
       - ./logs:/app/logs
-      # Persistent upload storage
       - ./uploads:/app/uploads
+
     restart: unless-stopped
+
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      # 120s gives STT model (~15s load) + YOLO models (~3s each) time to
+      # initialise before health checks start failing.
+      start_period: 120s
+
+    # ── Resource limits (adjust for your host) ───────────────
+    # The STT model alone uses ~2.5 GB RAM. Total at runtime: ~3.5 GB.
+    # Remove or increase these limits if you have more RAM available.
+    deploy:
+      resources:
+        limits:
+          memory: 6g
+        reservations:
+          memory: 3g
+
+# ── Named volumes ─────────────────────────────────────────
+volumes:
+  hf_modules_cache:
+    driver: local

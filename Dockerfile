@@ -1,47 +1,78 @@
-# AI Proctoring Backend — Production Docker image
-# Optimized for Render.com deployment
+# ============================================================
+# AI Proctoring Backend — Production Docker Image
+# ============================================================
+# Python 3.12 matches the development environment exactly.
+# Uses opencv-python-headless (no X11/display dependencies).
+# Models are expected via volume mount at /app/app/models
+# (see docker-compose.yml).
+# ============================================================
 
-FROM python:3.11-slim
+FROM python:3.12-slim
 
-# Prevent Python from writing .pyc files and buffer stdout/stderr
+# ── Python runtime flags ──────────────────────────────────
+# PYTHONUNBUFFERED: flush stdout/stderr immediately (visible in docker logs)
+# PYTHONDONTWRITEBYTECODE: skip .pyc files (saves disk in containers)
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 
+# ── HuggingFace cache isolation ───────────────────────────
+# Keeps transformers module cache inside the container filesystem,
+# not in the user home directory. Prevents stale cache issues.
+ENV HF_MODULES_CACHE=/app/.hf_modules_cache
+
+# ── Working directory ─────────────────────────────────────
 WORKDIR /app
 
-# Install system-level dependencies required by OpenCV, ONNX Runtime, ffmpeg, and native Python builds
+# ── System dependencies ───────────────────────────────────
+# libglib2.0-0  : required by opencv-python-headless
+# libgomp1      : required by ONNX Runtime (OpenMP threading)
+# ffmpeg        : required by audio conversion pipeline (webm/mp4 → wav)
+# curl          : required by Docker HEALTHCHECK
+# build-essential, gcc, g++, python3-dev : required to compile
+#                 native Python extensions (webrtcvad, numba, etc.)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     gcc \
     g++ \
     python3-dev \
     libglib2.0-0 \
-    libsm6 \
-    libxext6 \
-    libxrender-dev \
     libgomp1 \
     ffmpeg \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies first (layer-cached unless requirements.txt changes)
+# ── Python dependencies ───────────────────────────────────
+# Copy requirements first so Docker layer cache is reused
+# when only source code changes.
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
-# Copy application source
+# ── Application source ────────────────────────────────────
 COPY app/ ./app/
-
-# Copy frontend
 COPY frontend/ ./frontend/
 
-# Create runtime directories
-RUN mkdir -p uploads logs
+# ── Runtime directories ───────────────────────────────────
+# uploads/ : temporary audio/video files from WebSocket clients
+# logs/    : structured JSON application logs
+# .hf_modules_cache/ : transformers module cache (see HF_MODULES_CACHE above)
+RUN mkdir -p uploads logs .hf_modules_cache
 
+# ── Port ─────────────────────────────────────────────────
 EXPOSE 8000
 
-# Health check for Docker and Render
+# ── Health check ─────────────────────────────────────────
+# start_period: 120s gives the STT model (~15s) + YOLO models (~3s)
+# enough time to load before health checks begin.
 HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-# Start FastAPI app
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1", "--log-level", "info"]
+# ── Entrypoint ────────────────────────────────────────────
+# workers=1 is required: all three vision models are singletons loaded
+# once at startup. Multiple workers would each load their own copy,
+# multiplying RAM usage (3+ GB per worker).
+CMD ["uvicorn", "app.main:app", \
+     "--host", "0.0.0.0", \
+     "--port", "8000", \
+     "--workers", "1", \
+     "--log-level", "info"]
