@@ -60,11 +60,6 @@ coverage.xml
 # ONNX models in assets: tracked via Git LFS (add: git lfs track "*.onnx")
 # app/models/indic-conformer-600m/assets/*.onnx
 
-# Optimized/generated models — NOT committed (regenerate with pipeline)
-app/models/optimized/
-# ONNX exports generated from PT (regenerate with export_pt_to_onnx.py)
-app/models/*.onnx
-
 # HuggingFace local cache inside model directory
 app/models/indic-conformer-600m/.cache/
 
