@@ -62,12 +62,12 @@ coverage.xml
 
 # HuggingFace local cache inside model directory
 app/models/indic-conformer-600m/.cache/
-
+app/models/indic-conformer-600m
 # ── Benchmark outputs (generated data, not source) ───────
 benchmark/outputs/
 # Keep the directory structure
 !benchmark/outputs/.gitkeep
-
+audi_video.zip
 # ── HuggingFace module cache ──────────────────────────────
 .hf_modules_cache/
 .cache/
